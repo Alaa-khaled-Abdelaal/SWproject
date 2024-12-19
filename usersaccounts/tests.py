@@ -5,8 +5,10 @@ from events.models import Payments, Event
 
 class UserViewsTest(TestCase):
     def setUp(self):
-        # Initialize the test client
-        self.client = Client()
+        self.event = Event.objects.create(name="Test Event", location=[40.748817, -73.985428])  # Valid coordinates
+        # Continue setting up other required data for tests...
+
+
 
         # Create a test user
         self.user = User.objects.create_user(

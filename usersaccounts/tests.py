@@ -2,11 +2,16 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 from events.models import Payments, Event
+from datetime import datetime
 
 class UserViewsTest(TestCase):
     def setUp(self):
-        self.event = Event.objects.create(name="Test Event", location=[40.748817, -73.985428])  # Valid coordinates
-        # Continue setting up other required data for tests...
+        self.event = Event.objects.create(
+            name="Test Event",
+            location=[40.748817, -73.985428],
+            start_date=datetime.now()  # Provide a valid start_date
+        )
+
 
 
 

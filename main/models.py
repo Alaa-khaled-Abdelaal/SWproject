@@ -12,7 +12,7 @@ class Cart(models.Model):
     complete = models.BooleanField(default=False, null=True, blank=True)
     Event_Attendet = models.CharField(max_length=255)
 
-'''
+
 class Order(models.Model):
     EventAttendet = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
     date_order = models.DateTimeField(auto_now_add=True)
@@ -43,4 +43,3 @@ class OrderItem(models.Model):
     def get_total(self):
         toal = self.quantity * self.quantity
         return toal
-'''

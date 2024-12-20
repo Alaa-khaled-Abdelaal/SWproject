@@ -117,25 +117,44 @@ def checkAll(request):
     else:
         return JsonResponse({'error': 'Invalid request.'})
     
-
+'''
 def rmoveitem(request):
     if request.method == 'POST' and request.is_ajax():
         event_name = request.POST.get('eventName')
         print(event_name)      
         #item = Cart.objects.filter(eventName=event_name).first()
         Cart.objects.filter(pk__in=Cart.objects.filter(eventName=event_name).values_list('pk', flat=True)[1:]).delete()
-        # item = Cart.objects.filter(eventName=event_name)[:1]
+        #item = Cart.objects.filter(eventName=event_name)[:1]
         #print(item)
-        # item.delete()
+        #item.delete()
         
         # Return a JSON response indicating success
         return JsonResponse({'message': 'Item removed successfully.'})
     
     # Return a JSON response indicating failure
     return JsonResponse({'message': 'Invalid request.'}, status=400)
+'''
 
 
-
+def rmoveitem(request):
+    if request.method == 'POST' and request.is_ajax():
+        event_name = request.POST.get('eventName')
+        
+        # Find the first item in the cart with the specified event name for the user
+        item = Cart.objects.filter(eventName=event_name, Event_Attendet=str(request.user), complete=False).first()
+        
+        if item:
+            # Delete the item
+            item.delete()
+            
+            # Return a JSON response indicating success
+            return JsonResponse({'message': 'Item removed successfully.'})
+        else:
+            # If no such item exists, return an error
+            return JsonResponse({'error': 'Item not found in cart.'}, status=404)
+    
+    # Return a JSON response indicating failure
+    return JsonResponse({'message': 'Invalid request.'}, status=400)
 
 def feedback(request):
     if request.method == 'POST':

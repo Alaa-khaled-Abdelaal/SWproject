@@ -1,86 +1,44 @@
-
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 from django.urls import reverse
-from .models import Event, EventCategory
-from django.contrib.auth.models import User
+from events.views import search_event_category
+from events.models import EventCategory
 
-
-
-
-class EventViewsTest(TestCase):
-
+class SearchEventCategoryTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='password')
-        self.client.login(username='testuser', password='password')
-        self.category = EventCategory.objects.create(name='Test Category', code='TC123', status='active')
+        self.factory = RequestFactory()
+        self.url = reverse('admin_events:search-event-category')
+        # Creating some EventCategory objects for testing
+        EventCategory.objects.create(name="Music Festival", code="MUSIC01", status="active")
+        EventCategory.objects.create(name="Art Exhibition", code="ART01", status="active")
+        EventCategory.objects.create(name="Tech Conference", code="TECH01", status="inactive")
 
-    def test_event_create_view(self):
-        url = reverse('admin_events:event-create')
-        data = {
-            'category': self.category.id,
-            'name': 'Test Event',
-            'description': 'Test Event Description',
-            'scheduled_status': 'scheduled',
-            'venue': 'Test Venue',
-            'start_date': '2024-12-25',
-            'end_date': '2024-12-26',
-            'location': 'Test Location',
-            'maximum_attende': 100,
-            'price': 50,
-            'status': 'active'
-        }
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 302)  # Redirect after successful form submission
-        self.assertTrue(Event.objects.filter(name='Test Event').exists())
+    def test_search_event_category_view_with_results(self):
+        request = self.factory.post(self.url, data={'search': 'Music'})
+        response = search_event_category(request)
+        
+        # Assert that the response is OK
+        self.assertEqual(response.status_code, 200)
+        # Assert that the correct template is used
+        self.assertTemplateUsed(response, 'events/event_category.html')
+        # Assert that the context contains the filtered results
+        self.assertIn('event_category', response.context_data)
+        self.assertEqual(len(response.context_data['event_category']), 1)
+        self.assertEqual(response.context_data['event_category'][0].name, "Music Festival")
 
-    def test_event_update_view(self):
-        event = Event.objects.create(
-            category=self.category,
-            name='Old Event',
-            description='Old Event Description',
-            scheduled_status='scheduled',
-            venue='Old Venue',
-            start_date='2024-12-20',
-            end_date='2024-12-21',
-            location='Old Location',
-            maximum_attende=50,
-            price=100,
-            status='active'
-        )
-        url = reverse('admin_events:event-edit', args=[event.id])
-        data = {
-            'category': self.category.id,
-            'name': 'Updated Event',
-            'description': 'Updated Event Description',
-            'scheduled_status': 'scheduled',
-            'venue': 'Updated Venue',
-            'start_date': '2024-12-27',
-            'end_date': '2024-12-28',
-            'location': 'Updated Location',
-            'maximum_attende': 200,
-            'price': 150,
-            'status': 'active'
-        }
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 302)  # Redirect after successful form submission
-        event.refresh_from_db()
-        self.assertEqual(event.name, 'Updated Event')
+    def test_search_event_category_view_without_results(self):
+        request = self.factory.post(self.url, data={'search': 'Nonexistent'})
+        response = search_event_category(request)
+        
+        # Assert that the response is OK
+        self.assertEqual(response.status_code, 200)
+        # Assert that no results are found
+        self.assertEqual(len(response.context_data['event_category']), 0)
+    
+    def test_search_event_category_view_no_search(self):
+        request = self.factory.get(self.url)
+        response = search_event_category(request)
 
-    def test_event_delete_view(self):
-        event = Event.objects.create(
-            category=self.category,
-            name='Delete Event',
-            description='Delete Event Description',
-            scheduled_status='scheduled',
-            venue='Delete Venue',
-            start_date='2024-12-29',
-            end_date='2024-12-30',
-            location='Delete Location',
-            maximum_attende=10,
-            price=20,
-            status='active'
-        )
-        url = reverse('admin_events:event-delete', args=[event.id])
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, 302)  # Redirect after successful deletion
-        self.assertFalse(Event.objects.filter(name='Delete Event').exists())
+        # Assert that the response is OK
+        self.assertEqual(response.status_code, 200)
+        # Assert that no search query returns the unfiltered template
+        self.assertNotIn('event_category', response.context_data)

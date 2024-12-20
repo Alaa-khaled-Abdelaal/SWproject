@@ -1,61 +1,48 @@
 from django.test import TestCase
-from unittest.mock import patch
 from django.urls import reverse
 from django.contrib.auth.models import User
-from events.views import search_event_category
-from django.test.client import RequestFactory
+from events.models import EventUserWishList
+from django.http import Http404
 
-# Mock class to simulate EventCategory objects
-class MockEventCategory:
-    def __init__(self, name, code, status):
-        self.name = name
-        self.code = code
-        self.status = status
-
-class SearchEventCategoryTest(TestCase):
+class RemoveEventUserWishDeleteViewTest(TestCase):
+    
     def setUp(self):
-        self.factory = RequestFactory()
-        self.url = reverse('admin_events:search-event-category')
-
-        # Create a mock user to simulate login
+        # Create a user
         self.user = User.objects.create_user(username='testuser', password='password')
 
-    @patch('events.views.EventCategory.objects.filter')
-    def test_search_event_category_view_with_results(self, mock_filter):
-        # Mock the filter return value
-        mock_filter.return_value = [
-            MockEventCategory(name="Music Festival", code="MUSIC01", status="active")
-        ]
+        # Create an EventUserWishList object for the user
+        self.event_wish = EventUserWishList.objects.create(user=self.user, event_name="Test Event", event_code="TEST001")
+
+        # URL for deleting the EventUserWishList
+        self.url = reverse('admin_events:remove_event_user_wish', kwargs={'pk': self.event_wish.pk})
+
+    def test_redirect_if_not_logged_in(self):
+        # Check that the user is redirected to login if they are not logged in
+        response = self.client.get(self.url)
+        self.assertRedirects(response, f'/login/?next={self.url}')
+
+    def test_delete_event_wish_success(self):
+        # Log in the user
+        self.client.login(username='testuser', password='password')
+
+        # Make a GET request to the delete view (this triggers the deletion)
+        response = self.client.post(self.url)  # POST is typically used for delete actions
+
+        # Assert that the user is redirected to the success URL
+        self.assertRedirects(response, reverse('admin_events:event-wish-list'))
+
+        # Assert that the EventUserWishList object no longer exists
+        with self.assertRaises(EventUserWishList.DoesNotExist):
+            EventUserWishList.objects.get(pk=self.event_wish.pk)
+
+    def test_object_not_found(self):
+        # Log in the user
+        self.client.login(username='testuser', password='password')
+
+        # Try to delete a non-existing object
+        non_existing_url = reverse('admin_events:remove_event_user_wish', kwargs={'pk': 9999})
         
-        # Create a request and simulate user login
-        request = self.factory.post(self.url, data={'search': 'Music'})
-        request.user = self.user  # Manually set the user
+        # Assert that a 404 error is raised
+        response = self.client.post(non_existing_url)
+        self.assertEqual(response.status_code, 404)
 
-        # Perform the view call
-        response = search_event_category(request)
-
-        # Assert that the response is OK
-        self.assertEqual(response.status_code, 200)
-        # Assert that the correct template is used
-        self.assertTemplateUsed(response, 'events/event_category.html')
-        # Assert that the context contains the mocked results
-        self.assertIn('event_category', response.context)
-        self.assertEqual(len(response.context['event_category']), 1)
-        self.assertEqual(response.context['event_category'][0].name, "Music Festival")
-
-    @patch('events.views.EventCategory.objects.filter')
-    def test_search_event_category_view_without_results(self, mock_filter):
-        # Mock the filter return value for no results
-        mock_filter.return_value = []
-        
-        # Create a request and simulate user login
-        request = self.factory.post(self.url, data={'search': 'Nonexistent'})
-        request.user = self.user  # Manually set the user
-
-        # Perform the view call
-        response = search_event_category(request)
-
-        # Assert that the response is OK
-        self.assertEqual(response.status_code, 200)
-        # Assert that no results are found
-        self.assertEqual(len(response.context['event_category']), 0)

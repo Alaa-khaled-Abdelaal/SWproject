@@ -8,8 +8,13 @@ class EventCategoryUpdateViewTest(TestCase):
         # Create a test user
         self.user = User.objects.create_user(username='testuser', password='password')
         
-        # Create an EventCategory instance
-        self.event_category = EventCategory.objects.create(name='Test Category', code='TEST', status='active')
+        # Create an EventCategory instance with the created user
+        self.event_category = EventCategory.objects.create(
+            name='Test Category',
+            code='TEST',
+            status='active',
+            created_user=self.user  # Add the created_user field to satisfy the NOT NULL constraint
+        )
         
         # Define the URL for the update view
         self.url = reverse('edit_event_category', args=[self.event_category.pk])

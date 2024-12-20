@@ -1,5 +1,9 @@
+
 from django.test import TestCase
+from django.urls import reverse
 from .models import Event, EventCategory
+from django.contrib.auth.models import User
+
 
 
 

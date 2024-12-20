@@ -1,8 +1,9 @@
-from django.test import SimpleTestCase, RequestFactory
+from django.test import TestCase
 from unittest.mock import patch
 from django.urls import reverse
 from django.contrib.auth.models import User
 from events.views import search_event_category
+from django.test.client import RequestFactory
 
 # Mock class to simulate EventCategory objects
 class MockEventCategory:
@@ -11,7 +12,7 @@ class MockEventCategory:
         self.code = code
         self.status = status
 
-class SearchEventCategoryTest(SimpleTestCase):
+class SearchEventCategoryTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.url = reverse('admin_events:search-event-category')
@@ -30,6 +31,7 @@ class SearchEventCategoryTest(SimpleTestCase):
         request = self.factory.post(self.url, data={'search': 'Music'})
         request.user = self.user  # Manually set the user
 
+        # Perform the view call
         response = search_event_category(request)
 
         # Assert that the response is OK
@@ -50,6 +52,7 @@ class SearchEventCategoryTest(SimpleTestCase):
         request = self.factory.post(self.url, data={'search': 'Nonexistent'})
         request.user = self.user  # Manually set the user
 
+        # Perform the view call
         response = search_event_category(request)
 
         # Assert that the response is OK

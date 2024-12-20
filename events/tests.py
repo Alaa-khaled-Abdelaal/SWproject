@@ -1,4 +1,6 @@
+from django.test import TestCase
 from .models import Event, EventCategory
+
 
 
 class EventViewsTest(TestCase):

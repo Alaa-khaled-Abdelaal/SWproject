@@ -12,10 +12,12 @@ class EventCategoryTestCase(TestCase):
             name='Test Category',
             code='TEST',
             status='active',
-            created_user=self.user  # Add created_user to fix the NOT NULL constraint error
+            created_user=self.user,  # Add created_user
+            updated_user=self.user   # Add updated_user to fix the NOT NULL constraint error
         )
 
     def test_event_category_creation(self):
         # Example test to verify the EventCategory instance is created
         self.assertEqual(self.event_category.name, 'Test Category')
         self.assertEqual(self.event_category.created_user, self.user)
+        self.assertEqual(self.event_category.updated_user, self.user)

@@ -1,4 +1,4 @@
-from django.test import TestCase, RequestFactory
+from django.test import SimpleTestCase, RequestFactory
 from django.urls import reverse
 from events.views import search_event_category
 from events.models import EventCategory

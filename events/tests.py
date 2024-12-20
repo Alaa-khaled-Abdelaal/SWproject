@@ -1,6 +1,7 @@
 from django.test import SimpleTestCase, RequestFactory
 from unittest.mock import patch
 from django.urls import reverse
+from django.contrib.auth.models import User
 from events.views import search_event_category
 
 # Mock class to simulate EventCategory objects
@@ -15,13 +16,20 @@ class SearchEventCategoryTest(SimpleTestCase):
         self.factory = RequestFactory()
         self.url = reverse('admin_events:search-event-category')
 
+        # Create a mock user to simulate login
+        self.user = User.objects.create_user(username='testuser', password='password')
+
     @patch('events.views.EventCategory.objects.filter')
     def test_search_event_category_view_with_results(self, mock_filter):
         # Mock the filter return value
         mock_filter.return_value = [
             MockEventCategory(name="Music Festival", code="MUSIC01", status="active")
         ]
+        
+        # Create a request and simulate user login
         request = self.factory.post(self.url, data={'search': 'Music'})
+        request.user = self.user  # Manually set the user
+
         response = search_event_category(request)
 
         # Assert that the response is OK
@@ -37,7 +45,11 @@ class SearchEventCategoryTest(SimpleTestCase):
     def test_search_event_category_view_without_results(self, mock_filter):
         # Mock the filter return value for no results
         mock_filter.return_value = []
+        
+        # Create a request and simulate user login
         request = self.factory.post(self.url, data={'search': 'Nonexistent'})
+        request.user = self.user  # Manually set the user
+
         response = search_event_category(request)
 
         # Assert that the response is OK
